@@ -1,0 +1,70 @@
+# -------------------------------
+# GLOBAL DATA FLOW ANALYSIS
+# (Reaching Definitions)
+# -------------------------------
+
+# Example CFG
+# Blocks: B1, B2, B3
+# Each block has GEN and KILL sets
+
+blocks = ["B1", "B2", "B3"]
+
+# GEN[B]: definitions generated in block
+GEN = {
+    "B1": {"d1", "d2"},
+    "B2": {"d3"},
+    "B3": {"d4"}
+}
+
+# KILL[B]: definitions killed in block
+KILL = {
+    "B1": {"d3"},
+    "B2": {"d2"},
+    "B3": set()
+}
+
+# CFG (Predecessors)
+pred = {
+    "B1": [],
+    "B2": ["B1"],
+    "B3": ["B1", "B2"]
+}
+
+# Initialize IN and OUT
+IN = {b: set() for b in blocks}
+OUT = {b: set() for b in blocks}
+
+
+# -------------------------------
+# ITERATIVE ALGORITHM
+# -------------------------------
+changed = True
+
+while changed:
+    changed = False
+
+    for b in blocks:
+        # Save old OUT
+        old_out = OUT[b].copy()
+
+        # IN[B] = union of OUT of predecessors
+        IN[b] = set()
+        for p in pred[b]:
+            IN[b] |= OUT[p]
+
+        # OUT[B] = GEN[B] ∪ (IN[B] - KILL[B])
+        OUT[b] = GEN[b] | (IN[b] - KILL[b])
+
+        if old_out != OUT[b]:
+            changed = True
+
+
+# -------------------------------
+# PRINT RESULTS
+# -------------------------------
+print("\nReaching Definitions Result:\n")
+
+for b in blocks:
+    print(f"{b}:")
+    print(f"  IN  = {IN[b]}")
+    print(f"  OUT = {OUT[b]}")
