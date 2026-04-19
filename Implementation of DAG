@@ -1,0 +1,126 @@
+# -------------------------------
+# DAG NODE CLASS
+# -------------------------------
+class Node:
+    def __init__(self, op, left=None, right=None, value=None):
+        self.op = op          # operator
+        self.left = left      # left child
+        self.right = right    # right child
+        self.value = value    # for leaf nodes (a, b, c)
+        self.labels = []      # variables representing this node
+
+
+# -------------------------------
+# FIND EXISTING NODE
+# -------------------------------
+def find_node(nodes, op, left, right):
+    for node in nodes:
+        if node.op == op and node.left == left and node.right == right:
+            return node
+    return None
+
+
+# -------------------------------
+# BUILD DAG
+# -------------------------------
+def build_dag(expressions):
+    nodes = []
+    var_map = {}
+
+    for expr in expressions:
+        lhs, rhs = expr.split('=')
+        lhs = lhs.strip()
+
+        # Assuming simple form: a = b + c
+        parts = rhs.strip().split()
+
+        if len(parts) == 1:
+            # a = b
+            if parts[0] not in var_map:
+                node = Node(None, value=parts[0])
+                nodes.append(node)
+                var_map[parts[0]] = node
+            var_map[lhs] = var_map[parts[0]]
+            var_map[lhs].labels.append(lhs)
+
+        else:
+            op1, operator, op2 = parts
+
+            left = var_map.get(op1)
+            if not left:
+                left = Node(None, value=op1)
+                nodes.append(left)
+                var_map[op1] = left
+
+            right = var_map.get(op2)
+            if not right:
+                right = Node(None, value=op2)
+                nodes.append(right)
+                var_map[op2] = right
+
+            # Check common subexpression
+            existing = find_node(nodes, operator, left, right)
+
+            if existing:
+                node = existing
+            else:
+                node = Node(operator, left, right)
+                nodes.append(node)
+
+            node.labels.append(lhs)
+            var_map[lhs] = node
+
+    return nodes
+
+
+# -------------------------------
+# GENERATE OPTIMIZED CODE
+# -------------------------------
+def generate_code(nodes):
+    temp_count = 1
+    visited = {}
+
+    def generate(node):
+        nonlocal temp_count
+
+        if node in visited:
+            return visited[node]
+
+        if node.op is None:
+            return node.value
+
+        left = generate(node.left)
+        right = generate(node.right)
+
+        temp = f"t{temp_count}"
+        temp_count += 1
+
+        print(f"{temp} = {left} {node.op} {right}")
+
+        visited[node] = temp
+        return temp
+
+    print("\nOptimized Three Address Code:\n")
+
+    for node in nodes:
+        if node.op is not None:
+            result = generate(node)
+            for label in node.labels:
+                print(f"{label} = {result}")
+
+
+# -------------------------------
+# MAIN
+# -------------------------------
+if __name__ == "__main__":
+    n = int(input("Enter number of expressions: "))
+    expressions = []
+
+    for _ in range(n):
+        expressions.append(input("Enter expression (a = b + c): "))
+
+    dag = build_dag(expressions)
+
+    print("\nDAG Constructed Successfully!")
+
+    generate_code(dag)
