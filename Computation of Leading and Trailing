@@ -1,0 +1,106 @@
+# -------------------------------
+# COMPUTE LEADING & TRAILING
+# -------------------------------
+
+def is_terminal(symbol):
+    return not symbol.isupper()
+
+
+def compute_leading(grammar):
+    leading = {nt: set() for nt in grammar}
+
+    changed = True
+    while changed:
+        changed = False
+        
+        for nt in grammar:
+            for production in grammar[nt]:
+                
+                # Rule 1: First symbol is terminal
+                if is_terminal(production[0]):
+                    if production[0] not in leading[nt]:
+                        leading[nt].add(production[0])
+                        changed = True
+                
+                # Rule 2: First symbol is non-terminal
+                else:
+                    first = production[0]
+                    for symbol in leading[first]:
+                        if symbol not in leading[nt]:
+                            leading[nt].add(symbol)
+                            changed = True
+                
+                # Rule 3: A -> B a
+                if len(production) > 1 and production[0].isupper() and is_terminal(production[1]):
+                    if production[1] not in leading[nt]:
+                        leading[nt].add(production[1])
+                        changed = True
+
+    return leading
+
+
+def compute_trailing(grammar):
+    trailing = {nt: set() for nt in grammar}
+
+    changed = True
+    while changed:
+        changed = False
+        
+        for nt in grammar:
+            for production in grammar[nt]:
+                
+                # Rule 1: Last symbol is terminal
+                if is_terminal(production[-1]):
+                    if production[-1] not in trailing[nt]:
+                        trailing[nt].add(production[-1])
+                        changed = True
+                
+                # Rule 2: Last symbol is non-terminal
+                else:
+                    last = production[-1]
+                    for symbol in trailing[last]:
+                        if symbol not in trailing[nt]:
+                            trailing[nt].add(symbol)
+                            changed = True
+                
+                # Rule 3: A -> a B
+                if len(production) > 1 and production[-1].isupper() and is_terminal(production[-2]):
+                    if production[-2] not in trailing[nt]:
+                        trailing[nt].add(production[-2])
+                        changed = True
+
+    return trailing
+
+
+# -------------------------------
+# PRINT FUNCTION
+# -------------------------------
+def print_sets(title, sets):
+    print("\n" + title)
+    print("-" * len(title))
+    for nt in sets:
+        print(f"{nt} : {{ {', '.join(sets[nt])} }}")
+
+
+# -------------------------------
+# MAIN
+# -------------------------------
+if __name__ == "__main__":
+    grammar = {}
+
+    n = int(input("Enter number of productions: "))
+
+    for _ in range(n):
+        rule = input("Enter production (E->E+T|T): ")
+        left, right = rule.split("->")
+        grammar[left] = right.split("|")
+
+    print("\nGrammar:")
+    for nt in grammar:
+        print(f"{nt} -> {' | '.join(grammar[nt])}")
+
+    leading = compute_leading(grammar)
+    trailing = compute_trailing(grammar)
+
+    print_sets("LEADING Sets", leading)
+    print_sets("TRAILING Sets", trailing)
