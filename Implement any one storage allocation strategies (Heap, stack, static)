@@ -1,0 +1,70 @@
+# -------------------------------
+# STACK STORAGE ALLOCATION
+# -------------------------------
+
+class ActivationRecord:
+    def __init__(self, function_name, return_address):
+        self.function_name = function_name
+        self.return_address = return_address
+        self.local_variables = {}
+
+    def __str__(self):
+        return f"{self.function_name} | Return Addr: {self.return_address} | Locals: {self.local_variables}"
+
+
+class StackAllocator:
+    def __init__(self):
+        self.stack = []
+
+    # PUSH (Function Call)
+    def call_function(self, function_name, return_address):
+        record = ActivationRecord(function_name, return_address)
+        self.stack.append(record)
+        print(f"\nCALL -> {function_name}")
+        self.display()
+
+    # POP (Function Return)
+    def return_function(self):
+        if self.stack:
+            record = self.stack.pop()
+            print(f"\nRETURN <- {record.function_name}")
+            self.display()
+        else:
+            print("Stack Underflow!")
+
+    # Add local variable
+    def set_variable(self, var, value):
+        if self.stack:
+            self.stack[-1].local_variables[var] = value
+            print(f"Set {var} = {value} in {self.stack[-1].function_name}")
+        else:
+            print("No active function!")
+
+    # Display stack
+    def display(self):
+        print("\n--- STACK ---")
+        for i, record in enumerate(reversed(self.stack)):
+            print(f"{i}: {record}")
+        print("-------------")
+
+
+# -------------------------------
+# MAIN DEMO
+# -------------------------------
+if __name__ == "__main__":
+    stack = StackAllocator()
+
+    # Simulate program execution
+    stack.call_function("main", "START")
+
+    stack.set_variable("a", 10)
+
+    stack.call_function("func1", "main:line10")
+    stack.set_variable("x", 5)
+
+    stack.call_function("func2", "func1:line5")
+    stack.set_variable("y", 20)
+
+    stack.return_function()   # func2 ends
+    stack.return_function()   # func1 ends
+    stack.return_function()   # main ends
