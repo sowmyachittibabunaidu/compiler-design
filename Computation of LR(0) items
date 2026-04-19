@@ -1,0 +1,137 @@
+from collections import defaultdict, deque
+
+# -------------------------------
+# ADD DOT TO PRODUCTIONS
+# -------------------------------
+def add_dot(productions):
+    new_productions = []
+    for prod in productions:
+        new_productions.append("." + prod)
+    return new_productions
+
+
+# -------------------------------
+# CLOSURE FUNCTION
+# -------------------------------
+def closure(items, grammar):
+    closure_set = set(items)
+
+    while True:
+        new_items = set()
+
+        for item in closure_set:
+            dot_pos = item.find('.')
+
+            # If dot is not at end
+            if dot_pos < len(item) - 1:
+                symbol = item[dot_pos + 1]
+
+                # If symbol is non-terminal
+                if symbol.isupper():
+                    for prod in grammar[symbol]:
+                        new_item = symbol + "->." + prod
+                        new_items.add(new_item)
+
+        if new_items.issubset(closure_set):
+            break
+
+        closure_set.update(new_items)
+
+    return closure_set
+
+
+# -------------------------------
+# GOTO FUNCTION
+# -------------------------------
+def goto(items, symbol, grammar):
+    moved_items = set()
+
+    for item in items:
+        dot_pos = item.find('.')
+
+        if dot_pos < len(item) - 1 and item[dot_pos + 1] == symbol:
+            # Move dot
+            new_item = item[:dot_pos] + symbol + '.' + item[dot_pos + 2:]
+            moved_items.add(new_item)
+
+    return closure(moved_items, grammar)
+
+
+# -------------------------------
+# CANONICAL COLLECTION
+# -------------------------------
+def canonical_collection(grammar, start_symbol):
+    augmented_start = start_symbol + "'"
+    grammar[augmented_start] = [start_symbol]
+
+    # Initial state
+    start_item = augmented_start + "->." + start_symbol
+    I0 = closure([start_item], grammar)
+
+    states = [I0]
+    transitions = []
+
+    queue = deque([I0])
+
+    while queue:
+        current = queue.popleft()
+
+        symbols = set()
+        for item in current:
+            dot_pos = item.find('.')
+            if dot_pos < len(item) - 1:
+                symbols.add(item[dot_pos + 1])
+
+        for symbol in symbols:
+            new_state = goto(current, symbol, grammar)
+
+            if new_state and new_state not in states:
+                states.append(new_state)
+                queue.append(new_state)
+
+            if new_state:
+                transitions.append((states.index(current), symbol, states.index(new_state)))
+
+    return states, transitions
+
+
+# -------------------------------
+# PRINT STATES
+# -------------------------------
+def print_states(states):
+    for i, state in enumerate(states):
+        print(f"\nI{i}:")
+        for item in state:
+            print(" ", item)
+
+
+# -------------------------------
+# PRINT TRANSITIONS
+# -------------------------------
+def print_transitions(transitions):
+    print("\nTransitions:")
+    for t in transitions:
+        print(f"I{t[0]} -- {t[1]} --> I{t[2]}")
+
+
+# -------------------------------
+# MAIN
+# -------------------------------
+if __name__ == "__main__":
+    grammar = {}
+
+    n = int(input("Enter number of productions: "))
+
+    for _ in range(n):
+        rule = input("Enter production (E->E+T|T): ")
+        left, right = rule.split("->")
+        grammar[left] = right.split("|")
+
+    start_symbol = list(grammar.keys())[0]
+
+    states, transitions = canonical_collection(grammar, start_symbol)
+
+    print("\nCanonical LR(0) Items:")
+    print_states(states)
+
+    print_transitions(transitions)
