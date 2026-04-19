@@ -1,0 +1,102 @@
+# -------------------------------
+# OPERATOR PRECEDENCE
+# -------------------------------
+def precedence(op):
+    if op in ('+', '-'):
+        return 1
+    elif op in ('*', '/'):
+        return 2
+    elif op == '^':
+        return 3
+    return 0
+
+
+# -------------------------------
+# INFIX TO POSTFIX
+# -------------------------------
+def infix_to_postfix(expression):
+    stack = []
+    output = []
+
+    for char in expression:
+        if char.isalnum():  # operand
+            output.append(char)
+
+        elif char == '(':
+            stack.append(char)
+
+        elif char == ')':
+            while stack and stack[-1] != '(':
+                output.append(stack.pop())
+            stack.pop()
+
+        else:  # operator
+            while (stack and precedence(stack[-1]) >= precedence(char)):
+                output.append(stack.pop())
+            stack.append(char)
+
+    while stack:
+        output.append(stack.pop())
+
+    return ''.join(output)
+
+
+# -------------------------------
+# INFIX TO PREFIX
+# -------------------------------
+def infix_to_prefix(expression):
+    # Reverse expression
+    expression = expression[::-1]
+
+    # Swap brackets
+    expression = list(expression)
+    for i in range(len(expression)):
+        if expression[i] == '(':
+            expression[i] = ')'
+        elif expression[i] == ')':
+            expression[i] = '('
+
+    # Convert to postfix
+    postfix = infix_to_postfix(''.join(expression))
+
+    # Reverse postfix to get prefix
+    return postfix[::-1]
+
+
+# -------------------------------
+# THREE ADDRESS CODE (TAC)
+# -------------------------------
+def generate_TAC(postfix):
+    stack = []
+    temp_count = 1
+
+    print("\nThree Address Code:")
+
+    for char in postfix:
+        if char.isalnum():
+            stack.append(char)
+        else:
+            op2 = stack.pop()
+            op1 = stack.pop()
+
+            temp = f"t{temp_count}"
+            temp_count += 1
+
+            print(f"{temp} = {op1} {char} {op2}")
+
+            stack.append(temp)
+
+
+# -------------------------------
+# MAIN
+# -------------------------------
+if __name__ == "__main__":
+    expr = input("Enter Infix Expression: ")
+
+    postfix = infix_to_postfix(expr)
+    prefix = infix_to_prefix(expr)
+
+    print("\nPostfix Expression:", postfix)
+    print("Prefix Expression :", prefix)
+
+    generate_TAC(postfix)
